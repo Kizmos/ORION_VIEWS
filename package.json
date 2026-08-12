@@ -1,6 +1,6 @@
 {
   "name": "orion-vision",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "ORION - affichage TV : compte à rebours, diaporama d'images et planning de réunions",
   "private": true,
   "scripts": {
