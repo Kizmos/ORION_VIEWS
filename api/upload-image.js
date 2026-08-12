@@ -28,11 +28,14 @@ module.exports = async function handler(req, res) {
   const id = `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
   const pathname = `data/images/${id}-${name}`;
 
-  const blob = await put(pathname, buffer, {
-    access: 'public',
+  await put(pathname, buffer, {
+    access: 'private',
     contentType,
     addRandomSuffix: false,
   });
 
-  res.status(200).json({ id, name, url: blob.url });
+  // Le store est privé : le navigateur ne peut pas charger l'URL Vercel Blob
+  // directement. On expose plutôt notre propre route, qui relaie le contenu
+  // avec le jeton d'accès côté serveur.
+  res.status(200).json({ id, name, pathname, url: `/api/image?pathname=${encodeURIComponent(pathname)}` });
 };

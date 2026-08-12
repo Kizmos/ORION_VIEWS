@@ -7,10 +7,10 @@ module.exports = async function handler(req, res) {
     return;
   }
 
-  const url = req.query.url;
-  if (url) {
+  const pathname = req.query.pathname;
+  if (pathname) {
     try {
-      await del(url.toString());
+      await del(pathname.toString());
     } catch {
       // Déjà supprimée ou introuvable : on considère que le résultat voulu est atteint.
     }

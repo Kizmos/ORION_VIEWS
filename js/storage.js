@@ -197,8 +197,8 @@ export async function addImages(files) {
     });
     if (!res.ok) continue;
 
-    const { id, name, url } = await res.json();
-    existing.push({ id, name, url, order: nextOrder++, addedAt: new Date().toISOString() });
+    const { id, name, url, pathname } = await res.json();
+    existing.push({ id, name, url, pathname, order: nextOrder++, addedAt: new Date().toISOString() });
   }
 
   state.images = existing;
@@ -211,8 +211,8 @@ export async function deleteImage(id) {
   state.images = existing.filter((img) => img.id !== id);
   persist();
 
-  if (image) {
-    await fetch(`/api/delete-image?url=${encodeURIComponent(image.url)}`, { method: 'DELETE' }).catch(() => {});
+  if (image && image.pathname) {
+    await fetch(`/api/delete-image?pathname=${encodeURIComponent(image.pathname)}`, { method: 'DELETE' }).catch(() => {});
   }
 }
 
