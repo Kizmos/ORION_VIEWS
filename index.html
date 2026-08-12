@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ORION - Gestion de projet</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body class="tv-page">
+    <div class="app-shell">
+      <header>
+        <div class="header-top">
+          <img class="brand-logo" src="logo.png" alt="Logo Les Eaux Minérales d'Oulmès" />
+          <div class="header-title">
+            <img class="brand-logo-orion" src="orion-logo.png" alt="ORION" />
+            <img class="brand-logo-sap" src="sap-logo.svg" alt="Logo SAP S/4HANA" />
+          </div>
+        </div>
+      </header>
+
+      <main>
+        <div class="dashboard-grid display-only-grid">
+          <section class="card countdown-panel" id="countdown-section">
+            <div class="panel-header">
+              <span class="panel-tag" id="countdown-title"></span>
+            </div>
+            <div class="countdown-display tv-display">
+              <div>
+                <span class="count-number" id="days">00</span>
+                <span class="count-label">Jours</span>
+              </div>
+              <div>
+                <span class="count-number" id="hours">00</span>
+                <span class="count-label">Heures</span>
+              </div>
+              <div>
+                <span class="count-number" id="minutes">00</span>
+                <span class="count-label">Minutes</span>
+              </div>
+              <div>
+                <span class="count-number" id="seconds">00</span>
+                <span class="count-label">Secondes</span>
+              </div>
+            </div>
+            <p id="countdown-message" class="message">Aucune date configurée. Rendez-vous dans les paramètres.</p>
+          </section>
+
+          <section class="card meetings-panel" id="meetings-display-section">
+            <div class="panel-header">
+              <h2 id="meetings-heading">Réunions du jour</h2>
+              <span class="panel-tag">Planning</span>
+            </div>
+            <div id="meetingsList" class="event-list">
+              <div id="meetingsTrack" class="meetings-track"></div>
+            </div>
+          </section>
+
+          <section class="card slideshow-panel" id="slideshow-section">
+            <div class="slideshow tv-slideshow" id="slideshow">
+              <img class="slide" id="slideA" alt="" />
+              <img class="slide" id="slideB" alt="" />
+              <p id="slideshow-message" class="message slideshow-message">Aucune image importée. Rendez-vous dans les paramètres.</p>
+              <div class="ticker" id="ticker">
+                <div class="ticker-track" id="tickerTrack">
+                  <span class="ticker-text" id="tickerText"></span>
+                  <span class="ticker-text" id="tickerTextCopy" aria-hidden="true"></span>
+                </div>
+              </div>
+            </div>
+          </section>
+        </div>
+      </main>
+    </div>
+
+    <script type="module" src="js/display.js"></script>
+  </body>
+</html>

@@ -1,0 +1,9 @@
+{
+  "name": "orion-vision",
+  "version": "1.0.0",
+  "description": "ORION - affichage TV : compte à rebours, diaporama d'images et agenda Microsoft 365",
+  "private": true,
+  "scripts": {
+    "start": "node server.js"
+  }
+}

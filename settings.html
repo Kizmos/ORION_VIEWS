@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ORION - Paramètres</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <header>
+        <div class="header-top">
+          <img class="brand-logo" src="logo.png" alt="Logo Les Eaux Minérales d'Oulmès" />
+          <div class="header-title">
+            <h1>ORION</h1>
+            <img class="brand-logo-sap" src="sap-logo.svg" alt="Logo SAP S/4HANA" />
+            <p>Réglages de l'affichage ORION : compte à rebours, diaporama d'images et planning de réunions.</p>
+          </div>
+          <a class="nav-link" href="index.html">Retour à l'affichage</a>
+        </div>
+      </header>
+
+      <main>
+        <div class="settings-grid">
+          <section class="card countdown-panel" id="countdown-settings-section">
+            <div class="panel-header">
+              <h2>Compte à rebours</h2>
+              <span class="panel-tag">Fin du projet</span>
+            </div>
+            <div class="countdown-controls">
+              <label for="endDate">Date et heure :</label>
+              <input type="datetime-local" id="endDate" />
+              <label for="countdownTitle">Titre affiché :</label>
+              <input type="text" id="countdownTitle" placeholder="Ex : Lancement du projet" />
+              <button id="setDateButton">Valider</button>
+            </div>
+            <div class="countdown-display tv-display">
+              <div>
+                <span class="count-number" id="days">00</span>
+                <span class="count-label">Jours</span>
+              </div>
+              <div>
+                <span class="count-number" id="hours">00</span>
+                <span class="count-label">Heures</span>
+              </div>
+              <div>
+                <span class="count-number" id="minutes">00</span>
+                <span class="count-label">Minutes</span>
+              </div>
+              <div>
+                <span class="count-number" id="seconds">00</span>
+                <span class="count-label">Secondes</span>
+              </div>
+            </div>
+            <p id="countdown-message" class="message">Sélectionnez une date de fin pour le projet.</p>
+          </section>
+
+          <section class="card image-panel" id="image-settings-section">
+            <div class="panel-header">
+              <h2>Visionnage d'images</h2>
+              <span class="panel-tag">Diaporama</span>
+            </div>
+            <p>Importez les images du diaporama et réglez leur ordre et leur vitesse de défilement.</p>
+            <input type="file" id="imageInput" accept="image/*" multiple />
+            <div class="agenda-form">
+              <label for="slideshowInterval">Intervalle (secondes) :</label>
+              <input type="number" id="slideshowInterval" min="2" max="120" step="1" />
+            </div>
+            <div class="agenda-form">
+              <label for="imageSectionSize">Taille du bloc à l'affichage :</label>
+              <select id="imageSectionSize">
+                <option value="small">Petit</option>
+                <option value="medium">Moyen</option>
+                <option value="large">Grand</option>
+              </select>
+            </div>
+            <div id="imageManagerList" class="image-manager"></div>
+            <p id="image-settings-message" class="message"></p>
+
+            <div class="agenda-form">
+              <label class="layout-toggle" for="tickerEnabled">
+                <input type="checkbox" id="tickerEnabled" />
+              </label>
+              <label for="tickerEnabled">Message défilant sur l'image</label>
+            </div>
+            <div class="agenda-form">
+              <label for="tickerMode">Contenu :</label>
+              <select id="tickerMode">
+                <option value="text">Texte personnalisé</option>
+                <option value="planning">Planning du jour (automatique)</option>
+              </select>
+            </div>
+            <div class="agenda-form" id="tickerTextRow">
+              <label for="tickerText">Texte :</label>
+              <input type="text" id="tickerText" placeholder="Ex : Bienvenue chez Les Eaux Minérales d'Oulmès" />
+            </div>
+          </section>
+
+          <section class="card meetings-panel" id="meetings-settings-section">
+            <div class="panel-header">
+              <h2>Planning des réunions</h2>
+              <span class="panel-tag">Import Excel</span>
+            </div>
+            <p>Importez le fichier Excel du planning (une feuille par semaine, sujet/créneau/salle par
+              squad). L'écran affiche automatiquement les réunions du jour.</p>
+            <input type="file" id="meetingsFileInput" accept=".xlsx,.xls" />
+            <div class="calendar-actions tv-actions">
+              <button id="clearMeetingsButton">Vider le planning</button>
+            </div>
+            <p id="meetings-status" class="message"></p>
+            <div id="meetingsPreview" class="event-list"></div>
+
+            <div class="agenda-form">
+              <label for="morningStart">Matin :</label>
+              <input type="time" id="morningStart" />
+              <span>à</span>
+              <input type="time" id="morningEnd" />
+            </div>
+            <div class="agenda-form">
+              <label for="afternoonStart">Après-midi :</label>
+              <input type="time" id="afternoonStart" />
+              <span>à</span>
+              <input type="time" id="afternoonEnd" />
+            </div>
+            <div class="agenda-form">
+              <label class="layout-toggle" for="showPeriodTimes">
+                <input type="checkbox" id="showPeriodTimes" />
+              </label>
+              <label for="showPeriodTimes">Afficher les horaires au lieu de Matin/Après-midi</label>
+            </div>
+          </section>
+
+          <section class="card agenda-panel" id="layout-settings-section">
+            <div class="panel-header">
+              <h2>Disposition de l'affichage</h2>
+              <span class="panel-tag">Écran TV</span>
+            </div>
+            <p>Activez ou désactivez les blocs affichés sur l'écran TV et réordonnez-les avec ▲ / ▼. Le dernier bloc visible occupe toute la largeur.</p>
+            <div id="layoutManagerList" class="image-manager"></div>
+          </section>
+
+          <section class="card agenda-panel" id="agenda-section">
+            <div class="panel-header">
+              <h2>Agenda / Planning</h2>
+              <span class="panel-tag">Tâches</span>
+            </div>
+            <div class="agenda-form tv-agenda-form">
+              <input type="text" id="taskTitle" placeholder="Titre de la tâche" />
+              <input type="datetime-local" id="taskDate" />
+              <button id="addTaskButton">Ajouter</button>
+            </div>
+            <div id="taskList" class="task-list"></div>
+          </section>
+        </div>
+      </main>
+
+      <footer>
+        <p>ORION - Page de paramètres</p>
+      </footer>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <script type="module" src="js/settings.js"></script>
+  </body>
+</html>
