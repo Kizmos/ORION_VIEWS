@@ -1,6 +1,7 @@
 // Logique de la page de paramétrage (settings.html).
 
 import {
+  initStorage,
   getCountdown,
   setCountdown,
   getSlideshowInterval,
@@ -100,8 +101,6 @@ function setCountdownDate() {
 }
 
 setDateButton.addEventListener('click', setCountdownDate);
-loadCountdownFromStorage();
-tickPreview();
 setInterval(tickPreview, 1000);
 
 // --- Images / diaporama ---
@@ -110,13 +109,6 @@ const imageInput = document.getElementById('imageInput');
 const slideshowIntervalInput = document.getElementById('slideshowInterval');
 const imageManagerList = document.getElementById('imageManagerList');
 const imageSettingsMessage = document.getElementById('image-settings-message');
-
-let managerObjectUrls = [];
-
-function revokeManagerUrls() {
-  managerObjectUrls.forEach((url) => URL.revokeObjectURL(url));
-  managerObjectUrls = [];
-}
 
 async function moveImage(images, index, delta) {
   const targetIndex = index + delta;
@@ -129,7 +121,6 @@ async function moveImage(images, index, delta) {
 }
 
 async function renderImageManager() {
-  revokeManagerUrls();
   const images = await getAllImages();
   imageManagerList.innerHTML = '';
 
@@ -144,11 +135,8 @@ async function renderImageManager() {
     const item = document.createElement('div');
     item.className = 'image-manager-item';
 
-    const thumbUrl = URL.createObjectURL(image.blob);
-    managerObjectUrls.push(thumbUrl);
-
     const thumb = document.createElement('img');
-    thumb.src = thumbUrl;
+    thumb.src = image.url;
     thumb.alt = image.name;
     thumb.className = 'thumbnail';
 
@@ -191,7 +179,6 @@ imageInput.addEventListener('change', async (event) => {
   renderImageManager();
 });
 
-slideshowIntervalInput.value = getSlideshowInterval();
 slideshowIntervalInput.addEventListener('change', () => {
   const value = parseInt(slideshowIntervalInput.value, 10);
   if (!isNaN(value) && value >= 2) {
@@ -200,12 +187,9 @@ slideshowIntervalInput.addEventListener('change', () => {
 });
 
 const imageSectionSizeSelect = document.getElementById('imageSectionSize');
-imageSectionSizeSelect.value = getImageSectionSize();
 imageSectionSizeSelect.addEventListener('change', () => {
   setImageSectionSize(imageSectionSizeSelect.value);
 });
-
-renderImageManager();
 
 // --- Message défilant ---
 
@@ -236,8 +220,6 @@ tickerModeSelect.addEventListener('change', () => {
   updateTickerTextRowVisibility();
   saveTicker();
 });
-
-loadTicker();
 
 // --- Planning des réunions (import Excel) ---
 
@@ -348,8 +330,6 @@ clearMeetingsButton.addEventListener('click', () => {
   renderMeetingsPreview();
 });
 
-renderMeetingsPreview();
-
 // --- Horaires des créneaux Matin / Après-midi ---
 
 const morningStartInput = document.getElementById('morningStart');
@@ -382,8 +362,6 @@ showPeriodTimesInput.addEventListener('change', () => {
   setShowPeriodTimes(showPeriodTimesInput.checked);
 });
 
-loadPeriodTimes();
-
 // --- Agenda / planning ---
 
 const taskTitleInput = document.getElementById('taskTitle');
@@ -391,7 +369,7 @@ const taskDateInput = document.getElementById('taskDate');
 const addTaskButton = document.getElementById('addTaskButton');
 const taskListEl = document.getElementById('taskList');
 
-let tasks = getTasks();
+let tasks = [];
 
 function renderTasks() {
   taskListEl.innerHTML = '';
@@ -458,8 +436,6 @@ addTaskButton.addEventListener('click', () => {
   renderTasks();
 });
 
-renderTasks();
-
 // --- Disposition de l'affichage ---
 
 const layoutManagerList = document.getElementById('layoutManagerList');
@@ -525,4 +501,28 @@ function renderLayoutManager() {
   });
 }
 
-renderLayoutManager();
+// --- Initialisation ---
+// Toutes les données viennent du serveur (partagées entre appareils) : on attend
+// initStorage() avant de peupler l'interface avec les valeurs actuelles.
+
+(async function init() {
+  await initStorage();
+
+  loadCountdownFromStorage();
+  tickPreview();
+
+  slideshowIntervalInput.value = getSlideshowInterval();
+  imageSectionSizeSelect.value = getImageSectionSize();
+  await renderImageManager();
+
+  loadTicker();
+
+  renderMeetingsPreview();
+
+  loadPeriodTimes();
+
+  tasks = getTasks();
+  renderTasks();
+
+  renderLayoutManager();
+})();

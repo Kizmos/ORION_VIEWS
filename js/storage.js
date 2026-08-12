@@ -1,229 +1,226 @@
 // Stockage partagé entre index.html (affichage) et settings.html (paramètres).
-// localStorage pour les réglages simples, IndexedDB pour les images (plus volumineuses).
+// Toutes les données vivent côté serveur (API /api/*, backées par Vercel Blob) afin
+// que n'importe quel navigateur/appareil voie les mêmes réglages. Un cache mémoire
+// (`state`) évite de refaire un appel réseau à chaque lecture ; `initStorage()`
+// doit être attendu une fois au chargement de la page, et peut être rappelé pour
+// récupérer les changements faits depuis un autre appareil.
 
-const LS_KEYS = {
-  countdown: 'orion:countdown',
-  slideshowInterval: 'orion:slideshowInterval',
-  meetings: 'orion:meetings',
-  meetingsImportedAt: 'orion:meetingsImportedAt',
-  tasks: 'orion:tasks',
-  layout: 'orion:layout',
-  imageSectionSize: 'orion:imageSectionSize',
-  ticker: 'orion:ticker',
-  periodTimes: 'orion:periodTimes',
-  showPeriodTimes: 'orion:showPeriodTimes',
+const DEFAULT_STATE = {
+  countdown: null,
+  slideshowInterval: 8,
+  imageSectionSize: 'medium',
+  ticker: { enabled: false, text: '', mode: 'text' },
+  periodTimes: {
+    Matin: { start: '09:00', end: '12:30' },
+    'Après-midi': { start: '14:00', end: '17:30' },
+  },
+  showPeriodTimes: false,
+  layout: {
+    order: ['countdown', 'meetings', 'images'],
+    visible: { countdown: true, meetings: true, images: true },
+  },
+  tasks: [],
+  meetings: [],
+  meetingsImportedAt: null,
+  images: [],
 };
 
-const DEFAULT_PERIOD_TIMES = {
-  Matin: { start: '09:00', end: '12:30' },
-  'Après-midi': { start: '14:00', end: '17:30' },
-};
+let state = { ...DEFAULT_STATE };
 
-const DEFAULT_LAYOUT_ORDER = ['countdown', 'meetings', 'images'];
-
-const DB_NAME = 'orion-db';
-const DB_VERSION = 1;
-const IMAGE_STORE = 'images';
-
-function readJSON(key, fallback) {
-  const raw = localStorage.getItem(key);
-  if (!raw) return fallback;
+export async function initStorage() {
   try {
-    return JSON.parse(raw);
+    const res = await fetch('/api/state', { cache: 'no-store' });
+    state = res.ok ? { ...DEFAULT_STATE, ...(await res.json()) } : { ...DEFAULT_STATE };
   } catch {
-    return fallback;
+    // Hors-ligne ou API indisponible : on garde le dernier état connu en mémoire.
   }
+  return state;
 }
 
-function writeJSON(key, value) {
-  localStorage.setItem(key, JSON.stringify(value));
+let saveTimer = null;
+
+function persist() {
+  if (saveTimer) clearTimeout(saveTimer);
+  saveTimer = setTimeout(() => {
+    fetch('/api/state', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(state),
+    }).catch(() => {
+      // Pas de UI d'erreur dédiée : on retentera à la prochaine modification.
+    });
+  }, 400);
 }
 
 // --- Compte à rebours ---
 
 export function getCountdown() {
-  return readJSON(LS_KEYS.countdown, null);
+  return state.countdown;
 }
 
 export function setCountdown({ date, title }) {
-  writeJSON(LS_KEYS.countdown, { date, title: title || '' });
+  state.countdown = { date, title: title || '' };
+  persist();
 }
 
 // --- Diaporama ---
 
 export function getSlideshowInterval() {
-  return readJSON(LS_KEYS.slideshowInterval, 8);
+  return state.slideshowInterval ?? 8;
 }
 
 export function setSlideshowInterval(seconds) {
-  writeJSON(LS_KEYS.slideshowInterval, seconds);
+  state.slideshowInterval = seconds;
+  persist();
 }
 
 export function getImageSectionSize() {
-  return readJSON(LS_KEYS.imageSectionSize, 'medium');
+  return state.imageSectionSize ?? 'medium';
 }
 
 export function setImageSectionSize(size) {
-  writeJSON(LS_KEYS.imageSectionSize, size);
+  state.imageSectionSize = size;
+  persist();
 }
 
 // --- Message défilant sur l'image ---
 
 export function getTicker() {
-  return readJSON(LS_KEYS.ticker, { enabled: false, text: '', mode: 'text' });
+  return { ...DEFAULT_STATE.ticker, ...(state.ticker || {}) };
 }
 
 export function setTicker({ enabled, text, mode }) {
-  writeJSON(LS_KEYS.ticker, {
+  state.ticker = {
     enabled: Boolean(enabled),
     text: text || '',
     mode: mode === 'planning' ? 'planning' : 'text',
-  });
+  };
+  persist();
 }
 
 // --- Planning de réunions (importé depuis Excel) ---
 
 export function getMeetings() {
-  return readJSON(LS_KEYS.meetings, []);
+  return state.meetings || [];
 }
 
 export function setMeetings(meetings) {
-  writeJSON(LS_KEYS.meetings, meetings);
-  writeJSON(LS_KEYS.meetingsImportedAt, new Date().toISOString());
+  state.meetings = meetings;
+  state.meetingsImportedAt = new Date().toISOString();
+  persist();
 }
 
 export function getMeetingsImportedAt() {
-  return readJSON(LS_KEYS.meetingsImportedAt, null);
+  return state.meetingsImportedAt;
 }
 
 export function clearMeetings() {
-  localStorage.removeItem(LS_KEYS.meetings);
-  localStorage.removeItem(LS_KEYS.meetingsImportedAt);
+  state.meetings = [];
+  state.meetingsImportedAt = null;
+  persist();
 }
 
 export function getPeriodTimes() {
-  const stored = readJSON(LS_KEYS.periodTimes, null);
+  const stored = state.periodTimes || {};
   return {
-    Matin: { ...DEFAULT_PERIOD_TIMES.Matin, ...(stored && stored.Matin ? stored.Matin : {}) },
-    'Après-midi': { ...DEFAULT_PERIOD_TIMES['Après-midi'], ...(stored && stored['Après-midi'] ? stored['Après-midi'] : {}) },
+    Matin: { ...DEFAULT_STATE.periodTimes.Matin, ...(stored.Matin || {}) },
+    'Après-midi': { ...DEFAULT_STATE.periodTimes['Après-midi'], ...(stored['Après-midi'] || {}) },
   };
 }
 
 export function setPeriodTimes(periodTimes) {
-  writeJSON(LS_KEYS.periodTimes, periodTimes);
+  state.periodTimes = periodTimes;
+  persist();
 }
 
 export function getShowPeriodTimes() {
-  return readJSON(LS_KEYS.showPeriodTimes, false);
+  return Boolean(state.showPeriodTimes);
 }
 
 export function setShowPeriodTimes(value) {
-  writeJSON(LS_KEYS.showPeriodTimes, Boolean(value));
+  state.showPeriodTimes = Boolean(value);
+  persist();
 }
 
 // --- Disposition de l'affichage (blocs visibles + leur ordre) ---
 
-export function getLayout() {
-  const stored = readJSON(LS_KEYS.layout, null);
+const DEFAULT_LAYOUT_ORDER = DEFAULT_STATE.layout.order;
 
-  const order = (stored && Array.isArray(stored.order) ? stored.order : []).filter((id) =>
+export function getLayout() {
+  const stored = state.layout || {};
+
+  const order = (Array.isArray(stored.order) ? stored.order : []).filter((id) =>
     DEFAULT_LAYOUT_ORDER.includes(id)
   );
   DEFAULT_LAYOUT_ORDER.forEach((id) => {
     if (!order.includes(id)) order.push(id);
   });
 
-  const visible = { countdown: true, meetings: true, images: true, ...(stored && stored.visible ? stored.visible : {}) };
+  const visible = { ...DEFAULT_STATE.layout.visible, ...(stored.visible || {}) };
 
   return { order, visible };
 }
 
 export function setLayout(layout) {
-  writeJSON(LS_KEYS.layout, layout);
+  state.layout = layout;
+  persist();
 }
 
 // --- Tâches / planning ---
 
 export function getTasks() {
-  return readJSON(LS_KEYS.tasks, []);
+  return state.tasks || [];
 }
 
 export function setTasks(tasks) {
-  writeJSON(LS_KEYS.tasks, tasks);
+  state.tasks = tasks;
+  persist();
 }
 
-// --- Images (IndexedDB) ---
-
-function openDb() {
-  return new Promise((resolve, reject) => {
-    const request = indexedDB.open(DB_NAME, DB_VERSION);
-    request.onupgradeneeded = () => {
-      const db = request.result;
-      if (!db.objectStoreNames.contains(IMAGE_STORE)) {
-        db.createObjectStore(IMAGE_STORE, { keyPath: 'id' });
-      }
-    };
-    request.onsuccess = () => resolve(request.result);
-    request.onerror = () => reject(request.error);
-  });
-}
-
-async function withStore(mode, callback) {
-  const db = await openDb();
-  return new Promise((resolve, reject) => {
-    const tx = db.transaction(IMAGE_STORE, mode);
-    const store = tx.objectStore(IMAGE_STORE);
-    const result = callback(store);
-    tx.oncomplete = () => resolve(result);
-    tx.onerror = () => reject(tx.error);
-  });
-}
+// --- Images (Vercel Blob) ---
 
 export async function getAllImages() {
-  const images = await withStore('readonly', (store) => {
-    return new Promise((resolve, reject) => {
-      const request = store.getAll();
-      request.onsuccess = () => resolve(request.result);
-      request.onerror = () => reject(request.error);
-    });
-  });
-  return images.sort((a, b) => a.order - b.order);
+  return [...(state.images || [])].sort((a, b) => a.order - b.order);
 }
 
 export async function addImages(files) {
-  const existing = await getAllImages();
+  const existing = state.images || [];
   let nextOrder = existing.length ? Math.max(...existing.map((img) => img.order)) + 1 : 0;
 
-  await withStore('readwrite', (store) => {
-    Array.from(files).forEach((file) => {
-      if (!file.type.startsWith('image/')) return;
-      store.put({
-        id: `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
-        name: file.name,
-        type: file.type,
-        blob: file,
-        order: nextOrder++,
-        addedAt: new Date().toISOString(),
-      });
+  for (const file of Array.from(files)) {
+    if (!file.type.startsWith('image/')) continue;
+
+    const res = await fetch(`/api/upload-image?name=${encodeURIComponent(file.name)}`, {
+      method: 'POST',
+      headers: { 'Content-Type': file.type || 'application/octet-stream' },
+      body: file,
     });
-  });
+    if (!res.ok) continue;
+
+    const { id, name, url } = await res.json();
+    existing.push({ id, name, url, order: nextOrder++, addedAt: new Date().toISOString() });
+  }
+
+  state.images = existing;
+  persist();
 }
 
 export async function deleteImage(id) {
-  await withStore('readwrite', (store) => store.delete(id));
+  const existing = state.images || [];
+  const image = existing.find((img) => img.id === id);
+  state.images = existing.filter((img) => img.id !== id);
+  persist();
+
+  if (image) {
+    await fetch(`/api/delete-image?url=${encodeURIComponent(image.url)}`, { method: 'DELETE' }).catch(() => {});
+  }
 }
 
 export async function reorderImages(orderedIds) {
-  const images = await getAllImages();
-  const byId = new Map(images.map((img) => [img.id, img]));
-
-  await withStore('readwrite', (store) => {
-    orderedIds.forEach((id, index) => {
-      const image = byId.get(id);
-      if (image) {
-        image.order = index;
-        store.put(image);
-      }
-    });
+  const byId = new Map((state.images || []).map((img) => [img.id, img]));
+  orderedIds.forEach((id, index) => {
+    const image = byId.get(id);
+    if (image) image.order = index;
   });
+  persist();
 }

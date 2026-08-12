@@ -2,6 +2,7 @@
 // Ne fait jamais d'authentification : lit uniquement les données préparées côté paramètres.
 
 import {
+  initStorage,
   getCountdown,
   getSlideshowInterval,
   getAllImages,
@@ -88,19 +89,15 @@ function showSlide(index) {
   if (!images.length) return;
 
   const image = images[index];
-  const url = URL.createObjectURL(image.blob);
   const outgoingEl = slideEls[activeSlide];
   const incomingEl = slideEls[(activeSlide + 1) % 2];
-  const previousUrl = incomingEl.dataset.objectUrl;
 
-  incomingEl.src = url;
+  incomingEl.src = image.url;
   incomingEl.alt = image.name;
-  incomingEl.dataset.objectUrl = url;
   incomingEl.onload = () => {
     incomingEl.classList.add('visible');
     outgoingEl.classList.remove('visible');
     activeSlide = (activeSlide + 1) % 2;
-    if (previousUrl) URL.revokeObjectURL(previousUrl);
   };
 }
 
@@ -367,20 +364,22 @@ function applyLayout() {
 }
 
 // --- Démarrage ---
+// initStorage() va chercher l'état courant sur le serveur (partagé entre tous les
+// appareils). On le rappelle périodiquement pour détecter les changements faits
+// depuis un autre navigateur (ex: la page paramètres ouverte ailleurs), puis on
+// ré-applique tous les rendus avec les données fraîches.
 
-applyLayout();
-setInterval(applyLayout, 5000);
+async function refreshFromServer() {
+  await initStorage();
+  applyCountdownSettings();
+  applyLayout();
+  await refreshImages();
+  renderMeetings();
+  applyTicker();
+}
 
-applyCountdownSettings();
+refreshFromServer();
+setInterval(refreshFromServer, 5000);
+
 tickCountdown();
 setInterval(tickCountdown, 1000);
-setInterval(applyCountdownSettings, 5000);
-
-refreshImages();
-setInterval(refreshImages, 20000);
-
-renderMeetings();
-setInterval(renderMeetings, 30000);
-
-applyTicker();
-setInterval(applyTicker, 5000);

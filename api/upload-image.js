@@ -1,0 +1,38 @@
+const { put } = require('@vercel/blob');
+
+async function getRawBody(req) {
+  if (Buffer.isBuffer(req.body)) return req.body;
+  if (typeof req.body === 'string') return Buffer.from(req.body);
+
+  const chunks = [];
+  for await (const chunk of req) chunks.push(chunk);
+  return Buffer.concat(chunks);
+}
+
+module.exports = async function handler(req, res) {
+  if (req.method !== 'POST') {
+    res.setHeader('Allow', 'POST');
+    res.status(405).json({ error: 'Méthode non autorisée.' });
+    return;
+  }
+
+  const name = (req.query.name || 'image').toString();
+  const contentType = req.headers['content-type'] || 'application/octet-stream';
+  const buffer = await getRawBody(req);
+
+  if (!buffer.length) {
+    res.status(400).json({ error: 'Fichier vide.' });
+    return;
+  }
+
+  const id = `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+  const pathname = `data/images/${id}-${name}`;
+
+  const blob = await put(pathname, buffer, {
+    access: 'public',
+    contentType,
+    addRandomSuffix: false,
+  });
+
+  res.status(200).json({ id, name, url: blob.url });
+};
