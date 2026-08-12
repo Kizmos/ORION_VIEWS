@@ -1,7 +1,5 @@
 {
   "framework": null,
-  "buildCommand": false,
-  "installCommand": false,
   "outputDirectory": ".",
   "cleanUrls": true
 }
